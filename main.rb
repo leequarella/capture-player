@@ -12,6 +12,7 @@ end
 $api_instance = GameClient::GameApi.new
 
 $directions = {
+  h: "home",
   n: "north",
   s: "south",
   e: "east",
@@ -59,7 +60,7 @@ def column_move(direction)
     puts "column_move #{direction} #{i}. mode: #{$mode}"
     record($api_instance.post_moves(direction))
     return if $mode == :move
-    sleep 0.3
+    sleep 0.1
   end
 end
 
@@ -97,14 +98,28 @@ def move_to_root
   dist_to_x.times do |i|
     puts "going to x 0 #{i}"
     record($api_instance.post_moves("west"))
-    sleep 0.3
+    sleep 0.1
   end
 
   dist_to_y.times do |i|
     puts "going to y 0 #{i}"
     record($api_instance.post_moves("north"))
-    sleep 0.3
+    sleep 0.1
   end
+end
+
+def go_home
+  $mode = :home
+  dist_to_x = 40 - $player.x
+
+  if dist_to_x.positive?
+    (dist_to_x + 4).times do |i|
+      puts "homing #{i}"
+      record($api_instance.post_moves("east"))
+      sleep 0.1
+    end
+  end
+  $mode = :move
 end
 
 def direction_input
@@ -116,11 +131,16 @@ def direction_input
     return
   end
   direction = $directions[d.to_sym]
-  puts direction
   if direction
-    result = $api_instance.post_moves(direction)
-    record(result)
-    pp result
+    if direction == "home"
+      puts "GOING HOME!!!"
+      go_home
+    else
+      puts "moving #{direction}"
+      result = $api_instance.post_moves(direction)
+      record(result)
+      pp result
+    end
   else
     puts "no direction"
   end
@@ -135,6 +155,7 @@ def record(result)
   end
 end
 
+record($api_instance.get_player)
 while true
   begin
     action_input
